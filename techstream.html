@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechStream AI Demo (Optimized)</title>
+    <style>
+        :root { --primary: #6366F1; --primary-dark: #4F46E5; --bg: #F3F4F6; --text: #1F2937; --success: #10B981; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        
+        header { background: white; padding: 1rem 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; z-index: 20; }
+        .brand { font-size: 1.5rem; font-weight: 800; color: var(--primary); letter-spacing: -0.025em; display: flex; align-items: center; gap: 0.5rem; }
+        .brand span { color: #111827; }
+        .cart-badge { background: var(--text); color: white; padding: 0.5rem 1.25rem; border-radius: 999px; font-weight: 600; font-size: 0.875rem; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; }
+        .cart-badge.bump { transform: scale(1.05); background: var(--primary); }
+
+        main { display: flex; flex: 1; overflow: hidden; }
+        aside { width: 280px; background: white; padding: 2rem; border-right: 1px solid #E5E7EB; overflow-y: auto; flex-shrink: 0; }
+        .content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        
+        .debug-bar { background: #111827; color: #E5E7EB; padding: 0.75rem 2rem; font-family: 'Menlo', monospace; font-size: 12px; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
+        .debug-badge { background: #374151; padding: 2px 8px; border-radius: 4px; margin-left: 8px; color: #60A5FA; }
+
+        .product-scroll { flex: 1; padding: 2rem; overflow-y: auto; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2rem; }
+        
+        .card { background: white; border-radius: 1rem; padding: 1.5rem; display: flex; flex-direction: column; transition: all 0.3s; border: 1px solid transparent; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); border-color: #E5E7EB; }
+        
+        .card-img-wrapper { height: 160px; background: #F9FAFB; border-radius: 0.75rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 4rem; }
+        
+        .product-vendor { font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+        .product-title { font-size: 1.125rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1.4; margin-top: 0; }
+        .product-specs { font-size: 0.875rem; color: #6B7280; margin-bottom: 1.25rem; }
+        
+        .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .tag { background: #F3F4F6; color: #4B5563; font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.75rem; border-radius: 999px; }
+        
+        .price-row { margin-top: auto; display: flex; justify-content: space-between; align-items: center; }
+        .price { font-size: 1.5rem; font-weight: 800; color: #111827; }
+        
+        .btn { background: #111827; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn:hover { background: var(--primary); transform: translateY(-1px); }
+        .btn:active { transform: scale(0.95); }
+
+        .filter-group { margin-bottom: 2.5rem; }
+        .filter-title { font-size: 0.875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #9CA3AF; margin-bottom: 1.25rem; }
+        .checkbox-label { display: flex; align-items: center; margin-bottom: 0.875rem; color: #4B5563; font-size: 0.9375rem; cursor: pointer; }
+        .checkbox-label input { margin-right: 0.75rem; accent-color: var(--primary); width: 1.125rem; height: 1.125rem; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="32" height="32" rx="8" fill="#4F46E5"/>
+                <path d="M22 11L14 22L10 17" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Tech</span>Stream
+        </div>
+        <div id="cart-display" class="cart-badge">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            <span id="cart-text">0 items ($0.00)</span>
+        </div>
+    </header>
+
+    <div class="debug-bar">
+        <div>WebMCP Testing Mode</div>
+        <div id="active-status">Ready</div>
+    </div>
+
+    <main>
+        <aside>
+            <div class="filter-group">
+                <div class="filter-title">Quick Filters</div>
+                <label class="checkbox-label"><input type="checkbox" onchange="runFilter('Gaming')"> Gaming</label>
+                <label class="checkbox-label"><input type="checkbox" onchange="runFilter('Budget')"> Budget</label>
+                <label class="checkbox-label"><input type="checkbox" onchange="runFilter('Ultrabook')"> Ultrabook</label>
+                <label class="checkbox-label"><input type="checkbox" onchange="runFilter('reset')"> Show All</label>
+            </div>
+        </aside>
+
+        <div class="content-area">
+            <div class="product-scroll">
+                <div id="product-grid" class="grid">
+                    
+                    <article class="card" data-tags="Ultrabook Professional" data-id="p1">
+                        <div class="card-img-wrapper">💻</div>
+                        <div class="product-vendor">Quantum</div>
+                        <h3 class="product-title">Aetheria Nova X1</h3>
+                        <p class="product-specs">16GB RAM, 1TB SSD</p>
+                        <div class="tags"><span class="tag">Ultrabook</span><span class="tag">Professional</span></div>
+                        <div class="price-row">
+                            <span class="price">$1,199.99</span>
+                            <button class="btn" onclick="addToCart('p1', 1199.99)" aria-label="Add Aetheria Nova X1 to Cart">Add to Cart</button>
+                        </div>
+                    </article>
+
+                    <article class="card" data-tags="Gaming High-Performance" data-id="p2">
+                        <div class="card-img-wrapper">🎮</div>
+                        <div class="product-vendor">Nexus</div>
+                        <h3 class="product-title">Titanium Storm Z-3</h3>
+                        <p class="product-specs">RTX 4070, 32GB RAM</p>
+                        <div class="tags"><span class="tag">Gaming</span><span class="tag">High-Performance</span></div>
+                        <div class="price-row">
+                            <span class="price">$1,599.99</span>
+                            <button class="btn" onclick="addToCart('p2', 1599.99)" aria-label="Add Titanium Storm Z-3 to Cart">Add to Cart</button>
+                        </div>
+                    </article>
+
+                    <article class="card" data-tags="Budget Everyday" data-id="p3">
+                        <div class="card-img-wrapper">📝</div>
+                        <div class="product-vendor">Stellar</div>
+                        <h3 class="product-title">Evernote 1500</h3>
+                        <p class="product-specs">8GB RAM, 512GB SSD</p>
+                        <div class="tags"><span class="tag">Budget</span><span class="tag">Everyday</span></div>
+                        <div class="price-row">
+                            <span class="price">$524.99</span>
+                            <button class="btn" onclick="addToCart('p3', 524.99)" aria-label="Add Evernote 1500 to Cart">Add to Cart</button>
+                        </div>
+                    </article>
+
+                    <article class="card" data-tags="Creative Ultrabook" data-id="p4">
+                        <div class="card-img-wrapper">🎨</div>
+                        <div class="product-vendor">Aura</div>
+                        <h3 class="product-title">Chroma Flow S-2</h3>
+                        <p class="product-specs">OLED, 16GB Unified</p>
+                        <div class="tags"><span class="tag">Creative</span><span class="tag">Ultrabook</span></div>
+                        <div class="price-row">
+                            <span class="price">$1,299.99</span>
+                            <button class="btn" onclick="addToCart('p4', 1299.99)" aria-label="Add Chroma Flow S-2 to Cart">Add to Cart</button>
+                        </div>
+                    </article>
+
+                    <article class="card" data-tags="Gaming Workstation" data-id="p5">
+                        <div class="card-img-wrapper">🚀</div>
+                        <div class="product-vendor">Vortex</div>
+                        <h3 class="product-title">Cosmic Voyager G4</h3>
+                        <p class="product-specs">RTX 4090, 64GB RAM</p>
+                        <div class="tags"><span class="tag">Gaming</span><span class="tag">Workstation</span></div>
+                        <div class="price-row">
+                            <span class="price">$1,899.99</span>
+                            <button class="btn" onclick="addToCart('p5', 1899.99)" aria-label="Add Cosmic Voyager G4 to Cart">Add to Cart</button>
+                        </div>
+                    </article>
+
+                    <article class="card" data-tags="Business Security" data-id="p6">
+                        <div class="card-img-wrapper">🔒</div>
+                        <div class="product-vendor">Dynasty</div>
+                        <h3 class="product-title">Sentinelle X10 Pro</h3>
+                        <p class="product-specs">Rugged, 1TB SSD</p>
+                        <div class="tags"><span class="tag">Business</span><span class="tag">Security</span></div>
+                        <div class="price-row">
+                            <span class="price">$999.99</span>
+                            <button class="btn" onclick="addToCart('p6', 999.99)" aria-label="Add Sentinelle X10 Pro to Cart">Add to Cart</button>
+                        </div>
+                    </article>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let cartTotal = 0;
+        let cartCount = 0;
+
+        function addToCart(id, price) {
+            cartCount++;
+            cartTotal += price;
+            updateCartUI();
+            
+            const btn = document.querySelector(`article[data-id="${id}"] button`);
+            const originalText = btn.innerText;
+            btn.innerText = "Added!";
+            btn.style.background = "#10B981";
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = "";
+            }, 1000);
+        }
+
+        function updateCartUI() {
+            document.getElementById('cart-text').textContent = `${cartCount} items ($${cartTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})})`;
+            const badge = document.getElementById('cart-display');
+            badge.classList.add('bump');
+            setTimeout(() => badge.classList.remove('bump'), 300);
+        }
+
+        function runFilter(tag) {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                if (tag === 'reset') {
+                    card.classList.remove('hidden');
+                } else {
+                    const tags = card.getAttribute('data-tags');
+                    if (tags.includes(tag)) {
+                        card.classList.remove('hidden');
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                }
+            });
+            document.getElementById('active-status').innerText = tag === 'reset' ? 'Showing All' : `Filter: ${tag}`;
+        }
+
+        async function registerTools() {
+            if (!navigator.modelContext) { console.log('WebMCP API not found.'); return; }
+
+            try {
+                navigator.modelContext.registerTool({
+                    name: 'demo_show_gaming_laptops',
+                    description: 'Filter store to show gaming laptops.',
+                    inputSchema: { type: 'object', properties: {} },
+                    execute: async () => { 
+                        runFilter('Gaming');
+                        return "Filtered view to show Gaming laptops."; 
+                    }
+                });
+
+                navigator.modelContext.registerTool({
+                    name: 'demo_show_budget_laptops',
+                    description: 'Filter store to show budget laptops.',
+                    inputSchema: { type: 'object', properties: {} },
+                    execute: async () => { 
+                        runFilter('Budget');
+                        return "Filtered view to show Budget laptops."; 
+                    }
+                });
+
+                navigator.modelContext.registerTool({
+                    name: 'demo_add_titanium_storm',
+                    description: 'Add Titanium Storm Z-3 to cart.',
+                    inputSchema: { type: 'object', properties: {} },
+                    execute: async () => { 
+                        addToCart('p2', 1599.99);
+                        return "Titanium Storm Z-3 added to cart."; 
+                    }
+                });
+
+                navigator.modelContext.registerTool({
+                    name: 'demo_view_cart',
+                    description: 'Check current cart total.',
+                    inputSchema: { type: 'object', properties: {} },
+                    execute: async () => { 
+                        return `Cart has ${cartCount} items. Total: $${cartTotal.toFixed(2)}`; 
+                    }
+                });
+
+                navigator.modelContext.registerTool({
+                    name: 'demo_clear_filters',
+                    description: 'Reset all filters.',
+                    inputSchema: { type: 'object', properties: {} },
+                    execute: async () => { 
+                        runFilter('reset');
+                        return "All filters cleared."; 
+                    }
+                });
+
+                console.log('WebMCP Tools Registered Successfully');
+
+            } catch (e) { console.error('Tool registration failed', e); }
+        }
+
+        setTimeout(registerTools, 500);
+    </script>
+</body>
+</html>
